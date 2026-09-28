@@ -1,2 +1,2 @@
 @echo off
-powershell -NoProfile -ExecutionPolicy Bypass -File "E:\claude\claude-proxy\ClaudeCodeLauncher.ps1"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0Launcher.ps1"

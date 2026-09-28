@@ -1,12 +1,22 @@
-# Claude Code + TokenRhythm (基元律动) 本地兼容代理
+# cc-env-setup | Claude Code 环境一键配置工具（TokenRhythm/基元律动/DeepSeek/GLM 本地代理）
 
-> **中文简介：** 本项目解决 Claude Code 与基元律动（TokenRhythm，https://tokenrhythm.studio）网关之间的协议不兼容问题。通过在本地架设一个清洗代理，把 Claude Code 新版请求中网关不认识的字段（如 `anthropic-beta` 请求头、`thinking`、`cache_control` 等）过滤掉，让 Claude Code 能正常调用 TokenRhythm 的 DeepSeek / GLM 等模型。支持图形界面一键启动、API Key 切换、模型选择，退出后自动清理临时文件与代理进程，不污染系统环境变量。
+> **一键搞定 Claude Code 国内配置！** 自动检测环境、安装/降级兼容版 Claude Code、配置 API Key、启动本地协议清洗代理。解决 Claude Code 接入 TokenRhythm（基元律动）、DeepSeek、GLM 等国内模型时的 `anthropic-beta` 400 报错、强制登录、模型不识别等问题。支持图形界面和命令行，开箱即用。
 
-## 问题背景
+## 📌 关键词
 
-Claude Code (新版) 发送请求时带以下 TokenRhythm 网关不认识的字段，导致 HTTP 400：
+`Claude Code` `TokenRhythm` `基元律动` `DeepSeek` `GLM` `本地代理` `协议转换` `anthropic-beta 400` `国内配置` `一键安装` `Windows` `PowerShell` `CC Switch` `Claude Code 报错`
 
-| 违禁品 | 位置 | 后果 |
+---
+
+## 🎯 这个工具解决什么问题？
+
+国内使用 **Claude Code** 接入 **TokenRhythm（基元律动）** 等网关时，会遇到这些常见问题：
+
+### 问题 1：HTTP 400 报错（协议不兼容）
+
+Claude Code 新版发送请求时，会带以下 TokenRhythm 网关**不认识的字段**，导致 **HTTP 400**：
+
+| 违禁字段 | 位置 | 后果 |
 | --- | --- | --- |
 | `anthropic-beta` | 请求头 | 400 |
 | `thinking` / `output_config` / `context_management` / `service_tier` | 顶层字段 | 400 |
@@ -15,89 +25,184 @@ Claude Code (新版) 发送请求时带以下 TokenRhythm 网关不认识的字�
 | `role: "system"` 混在消息列表里 | messages[] | 400 |
 | tool_use / tool_result 的扩展字段 | messages[] / tools[] | 400 |
 
-## 解决方案
+### 问题 2：新版 Claude Code 强制登录
 
-在 `127.0.0.1` 架一个本地代理，把 Claude Code 的请求「清洗」成 TokenRhythm 认识的格式再转发。
+**Claude Code 2.1.283+** 会校验模型目录、强制要求登录，无法用 API Key 直连网关。需要**降级到 2.1.153**。
+
+### 问题 3：不认识自定义模型名
+
+新版 Claude Code 不认识 `deepseek-flash`、`glm-5.3-flashx` 等自定义模型名，提示 `isn't described by this version's model catalog`。
+
+---
+
+## ✅ 本工具的解决方案
+
+在本地 `127.0.0.1` 架一个**协议清洗代理**，把 Claude Code 的请求「翻译」成网关认识的格式再转发：
 
 ```
-Claude Code ──→ http://127.0.0.1:<端口> ──→ https://tokenrhythm.studio
+Claude Code ──→ http://127.0.0.1:<随机端口> ──→ https://tokenrhythm.studio
                     │
-                    └─ 清洗：去 beta 头、system 归位、删 thinking/cache_control 等
+                    └─ 本地清洗代理：
+                       - 删除 anthropic-beta 请求头
+                       - system 消息移到顶层
+                       - 删除 thinking / cache_control / service_tier 等字段
 ```
 
-## 环境要求
+---
 
-- Node.js 18+
-- Claude Code **2.1.153**（旧版，不校验自定义模型名、不强制登录）
+## ✨ 功能特性
 
-> 新版 Claude Code (2.1.283+) 会校验模型目录并强制登录，无法使用。请降级：
-> ```
-> npm install -g @anthropic-ai/claude-code@2.1.153
-> ```
+- ✅ **环境自动检测** — 检查 Node.js / Git / Claude Code 及版本是否就绪
+- ✅ **一键降级** — 自动安装兼容版 Claude Code (2.1.153)
+- ✅ **引导式配置** — 输入 API Key、选择模型，配置保存到本地
+- ✅ **本地清洗代理** — 自动过滤不兼容字段，解决 400 报错
+- ✅ **工作目录选择** — 图形界面可选 Claude Code 打开目录
+- ✅ **自动清理** — 退出后自动清理临时文件和代理进程
+- ✅ **安全设计** — Key 保存在本地 `.local-config.json`，gitignore 排除，不泄露
+- ✅ **双模式** — 命令行脚本 + 图形界面 (GUI)
+- ✅ **全中文教程** — 适合新手
 
-## 使用方法
+---
 
-### 方式一：命令行
+## 📂 项目结构
 
-在**目标项目目录**下运行（Claude Code 会在此目录打开）：
-
-```powershell
-powershell -ExecutionPolicy Bypass -File StartTokenRhythm.ps1
+```
+cc-env-setup/
+├── LaunchUI.bat          # 双击打开图形界面（推荐）
+├── setup.bat             # 双击打开命令行菜单
+├── Launcher.ps1          # 图形界面主程序
+├── setup.ps1             # 命令行主菜单
+└── scripts/
+    ├── 01-check-env.ps1  # 环境检查
+    ├── 02-install-cc.ps1 # 安装/降级 Claude Code
+    ├── 03-config.ps1     # 配置 Key/模型
+    └── 04-start.ps1      # 一键启动（本地代理 + Claude Code）
 ```
 
-指定 Key、模型、工作目录：
+---
+
+## 🚀 快速开始
+
+### 方式一：图形界面（推荐，最简单）
+
+1. **双击** `LaunchUI.bat`，打开图形界面
+2. 按顺序操作，界面按钮及**正确显示结果**：
+
+| 按钮 | 操作 | ✅ 正确显示结果 |
+| --- | --- | --- |
+| **Check Env** | 点击 | 弹出新窗口，显示 `[OK] Node.js...`、`[OK] Git...`、`[OK] Claude Code...`，**窗口停留** |
+| **Install** | 点击 | 弹出新窗口，显示安装进度，最后 `Claude Code 2.1.153 安装成功`，**窗口停留** |
+| **Config Key** | 点击 | 弹出新窗口，输入 API Key → 选模型 → 显示 `配置已保存`，**窗口停留** |
+| **Start Claude Code** | 点击 | 打开 Claude Code 终端，可正常对话 |
+
+> 💡 **注意**：点击 Check Env / Install / Config Key 后会打开新窗口显示结果，**该窗口会停留**（不会闪退），看完手动关闭即可。
+
+3. **推荐操作顺序**：
+   - ① 点 **Check Env** → 看到 `[OK]` 即环境就绪
+   - ② 点 **Install** → 安装/降级 Claude Code
+   - ③ 点 **Config Key** → 配置 API Key 和模型
+   - ④ 用 **Browse...** 选择工作目录
+   - ⑤ 点 **Start Claude Code** → 启动
+
+### 方式二：命令行
+
+双击 `setup.bat` 打开菜单，或直接运行各脚本：
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File StartTokenRhythm.ps1 -ApiKey "sk_tr_YOUR_KEY" -Model "deepseek-flash" -WorkDir "E:\你的项目目录"
+# 1. 环境检查
+powershell -ExecutionPolicy Bypass -File scripts\01-check-env.ps1
+
+# 2. 安装/降级 Claude Code
+powershell -ExecutionPolicy Bypass -File scripts\02-install-cc.ps1
+
+# 3. 配置 Key/模型
+powershell -ExecutionPolicy Bypass -File scripts\03-config.ps1
+
+# 4. 一键启动（本地代理 + Claude Code）
+powershell -ExecutionPolicy Bypass -File scripts\04-start.ps1
+```
+
+### 命令行直接启动（带参数）
+
+```powershell
+# 指定模型和工作目录
+powershell -ExecutionPolicy Bypass -File scripts\04-start.ps1 -Model "deepseek-flash" -WorkDir "E:\你的项目目录"
 ```
 
 **参数说明：**
 | 参数 | 说明 | 默认值 |
 | --- | --- | --- |
-| `-ApiKey` | TokenRhythm API Key | 无 |
-| `-Model` | 使用的模型 | `deepseek-flash` |
-| `-WorkDir` | Claude Code 工作目录（打开的目录） | 调用脚本时所在目录 |
-| `-Effort` | 推理强度（high/max） | `high` |
-| `-Cli` | 使用的 CLI（auto/claude/clawgod） | `auto` |
+| `-Model` | 使用的模型 | 读取本地配置 |
+| `-WorkDir` | Claude Code 工作目录 | 当前目录 |
 
-### 方式二：图形界面 (UI) — 推荐
+---
 
-双击 `LaunchUI.bat` 打开图形界面，支持：
+## 🛠 环境要求
 
-1. **API Key** — 自动读取本地 `.local-config.json`（若存在），也可手动编辑
-2. **模型选择** — 下拉选择支持 Anthropic 协议的模型
-3. **工作目录选择** — 点击 **Browse...** 选择 Claude Code 打开的文件夹
-4. **一键启动** — 自动启动本地清洗代理 + Claude Code，退出后自动清理
+- **Windows 10 / 11**
+- **Node.js 18+**（脚本会自动检测）
+- **Git**（可选，脚本会自动检测）
 
-#### 本地配置 Key（可选，推荐）
+---
 
-为避免在公共脚本中硬编码真实 Key，可在脚本同目录创建 `.local-config.json`（该文件已被 `.gitignore` 排除，不会推送）：
-
-```json
-{
-  "apiKey": "sk_tr_你的真实Key"
-}
-```
-
-UI 启动时会自动读取该文件填入 Key，无需每次手动输入。
-
-## 支持的模型
+## 🧠 支持的模型
 
 仅支持 `supports_anthropic: true` 的模型（可通过网关 `/v1/models` 查询）：
 
-- `deepseek-flash`
-- `glm-5.3-flashx`
-- `deepseek-v4-pro-0813`
-- `mimo-v2.6-pro`
+| 模型 | 说明 |
+| --- | --- |
+| `deepseek-flash` | DeepSeek 快速模型（推荐） |
+| `glm-5.3-flashx` | 智谱 GLM 快速模型 |
+| `deepseek-v4-pro-0813` | DeepSeek 专业模型 |
+| `mimo-v2.6-pro` | Mimo 专业模型 |
 
-> 在 `StartTokenRhythm.ps1` 顶部修改默认模型，或通过 `-Model` 参数指定。
+> 可在 `scripts/03-config.ps1` 或 `04-start.ps1` 中按需添加其他模型。
 
-## 说明
+---
 
-- 脚本启动本地代理 + Claude Code，退出 Claude Code 后自动清理所有临时文件和代理进程
-- 不修改用户级 `.claude/settings.json`
-- 不写入任何持久化环境变量
+## 🔒 安全说明
 
-## 免责声明
+- **API Key 不写入脚本**，保存在本地 `.local-config.json`（已被 `.gitignore` 排除，不会推送到公开仓库）
+- 启动时使用**临时配置**，**不修改**用户级 `.claude/settings.json`
+- **不写入**任何持久化环境变量
+- 退出 Claude Code 后**自动清理**所有临时文件和代理进程
 
-本项目仅供学习研究。请遵守 TokenRhythm 服务条款。使用前请替换为自己的 API Key。
+---
+
+## 💡 常见问题 (FAQ)
+
+**Q: 为什么需要降级 Claude Code？**
+A: 新版 (2.1.283+) 会强制登录且不识别自定义模型名，旧版 **2.1.153** 可正常使用 API Key 直连。
+
+**Q: API Key 存在哪里？**
+A: `scripts/../.local-config.json`，已被 gitignore 排除，不会推送到公开仓库。
+
+**Q: 提示 `anthropic-beta` 400 报错怎么办？**
+A: 本工具的本地清洗代理会自动删除 `anthropic-beta` 请求头，无需手动处理。
+
+**Q: 提示模型 not found / 不认识怎么办？**
+A: 确认使用上述「支持的模型」列表中的模型，且 Claude Code 已降级到 2.1.153。
+
+**Q: 支持其他网关吗？**
+A: 可修改 `scripts/04-start.ps1` 顶部的 `UPSTREAM` 地址指向其他网关。
+
+**Q: 点击按钮闪退/窗口关闭怎么办？**
+A: 已修复。点击 Check Env / Install / Config Key 后窗口会停留，请确认使用的是最新版。
+
+---
+
+## 📝 免责声明
+
+本项目仅供学习研究。请遵守 **TokenRhythm（基元律动）** 服务条款。请使用自己的 API Key。
+
+---
+
+## 📄 License
+
+MIT
+
+---
+
+## ⭐ 支持
+
+如果这个工具对你有帮助，欢迎 **Star** ⭐ 支持！也欢迎提交 Issue 和 PR。

@@ -1,24 +1,20 @@
-# 依赖与构建产物
+# Local sensitive config (do not push)
+.local-config.json
+config.local.json
+*.local.env
+.env
+
+# Dependencies and build
 node_modules/
-unpackage/
 dist/
-target/
 build/
 
-# 编辑器
+# Editors
 .idea/
 .vscode/
 *.iml
 
-# 系统文件
+# System
 .DS_Store
 Thumbs.db
-
-# 日志
 *.log
-
-# 本地敏感配置（不推送）
-.local-config.json
-config.local.json
-*.local.env
-.envproxy-test.js
