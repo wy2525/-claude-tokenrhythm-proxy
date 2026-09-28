@@ -4,8 +4,16 @@
     [ValidateSet("high", "max")]
     [string]$Effort = "high",
     [ValidateSet("auto", "claude", "clawgod")]
-    [string]$Cli = "auto"
+    [string]$Cli = "auto",
+    [string]$WorkDir = ""
 )
+
+if ([string]::IsNullOrWhiteSpace($WorkDir)) {
+    $WorkDir = (Get-Location).Path
+}
+if (-not (Test-Path $WorkDir)) {
+    throw "WorkDir does not exist: $WorkDir"
+}
 
 $ErrorActionPreference = "Stop"
 
@@ -483,9 +491,16 @@ try {
     Write-Host "[OK] Effort:          sanitized for TokenRhythm"
     Write-Host ""
     Write-Host "Starting $cliName. Exit $cliName to remove all temporary files."
+    Write-Host "[OK] Working directory: $WorkDir"
     Write-Host ""
 
-    & $cliCmd.Source --settings $settingsPath --model $Model --effort $Effort
+    Push-Location $WorkDir
+    try {
+        & $cliCmd.Source --settings $settingsPath --model $Model --effort $Effort
+    }
+    finally {
+        Pop-Location
+    }
 }
 finally {
     Write-Host ""

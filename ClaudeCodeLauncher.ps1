@@ -3,6 +3,9 @@ Add-Type -AssemblyName System.Drawing
 
 $scriptPath = "E:\claude\claude-proxy\StartTokenRhythm.ps1"
 
+# 记录调用 UI 时的当前目录（即用户期望的工作目录）
+$launchDir = (Get-Location).Path
+
 $form = New-Object System.Windows.Forms.Form
 $form.Text = "Claude Code Launcher"
 $form.Size = New-Object System.Drawing.Size(480, 500)
@@ -88,10 +91,10 @@ $btnStart.Add_Click({
     $lblStatus.ForeColor = [System.Drawing.Color]::Orange
     $form.Refresh()
 
-    $args = "-NoProfile -ExecutionPolicy Bypass -File `"$scriptPath`" -ApiKey `"$key`" -Model `"$model`""
+    $args = "-NoProfile -ExecutionPolicy Bypass -File `"$scriptPath`" -ApiKey `"$key`" -Model `"$model`" -WorkDir `"$launchDir`""
     try {
         Start-Process powershell -ArgumentList $args
-        $lblStatus.Text = "Claude Code started. Cleans up on exit."
+        $lblStatus.Text = "Claude Code started in: $launchDir"
         $lblStatus.ForeColor = [System.Drawing.Color]::Green
     } catch {
         $lblStatus.Text = "Start failed: $($_.Exception.Message)"
