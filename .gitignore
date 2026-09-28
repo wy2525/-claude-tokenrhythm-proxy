@@ -1,5 +1,24 @@
+# 依赖与构建产物
 node_modules/
+unpackage/
+dist/
+target/
+build/
+
+# 编辑器
+.idea/
+.vscode/
+*.iml
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 日志
 *.log
-test-settings.json
-session-test.json
-proxy-test.js
+
+# 本地敏感配置（不推送）
+.local-config.json
+config.local.json
+*.local.env
+.envproxy-test.js

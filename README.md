@@ -39,19 +39,47 @@ Claude Code ──→ http://127.0.0.1:<端口> ──→ https://tokenrhythm.st
 
 ### 方式一：命令行
 
+在**目标项目目录**下运行（Claude Code 会在此目录打开）：
+
 ```powershell
 powershell -ExecutionPolicy Bypass -File StartTokenRhythm.ps1
 ```
 
-指定 Key 和模型：
+指定 Key、模型、工作目录：
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File StartTokenRhythm.ps1 -ApiKey "sk_tr_YOUR_KEY" -Model "deepseek-flash"
+powershell -ExecutionPolicy Bypass -File StartTokenRhythm.ps1 -ApiKey "sk_tr_YOUR_KEY" -Model "deepseek-flash" -WorkDir "E:\你的项目目录"
 ```
 
-### 方式二：图形界面 (UI)
+**参数说明：**
+| 参数 | 说明 | 默认值 |
+| --- | --- | --- |
+| `-ApiKey` | TokenRhythm API Key | 无 |
+| `-Model` | 使用的模型 | `deepseek-flash` |
+| `-WorkDir` | Claude Code 工作目录（打开的目录） | 调用脚本时所在目录 |
+| `-Effort` | 推理强度（high/max） | `high` |
+| `-Cli` | 使用的 CLI（auto/claude/clawgod） | `auto` |
 
-双击 `LaunchUI.bat`，在窗口中填入 API Key、选择模型、点击启动。
+### 方式二：图形界面 (UI) — 推荐
+
+双击 `LaunchUI.bat` 打开图形界面，支持：
+
+1. **API Key** — 自动读取本地 `.local-config.json`（若存在），也可手动编辑
+2. **模型选择** — 下拉选择支持 Anthropic 协议的模型
+3. **工作目录选择** — 点击 **Browse...** 选择 Claude Code 打开的文件夹
+4. **一键启动** — 自动启动本地清洗代理 + Claude Code，退出后自动清理
+
+#### 本地配置 Key（可选，推荐）
+
+为避免在公共脚本中硬编码真实 Key，可在脚本同目录创建 `.local-config.json`（该文件已被 `.gitignore` 排除，不会推送）：
+
+```json
+{
+  "apiKey": "sk_tr_你的真实Key"
+}
+```
+
+UI 启动时会自动读取该文件填入 Key，无需每次手动输入。
 
 ## 支持的模型
 
