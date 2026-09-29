@@ -48,7 +48,6 @@ if ($null -eq $git) {
 # --- Claude Code ---
 Write-Host "[3/3] Checking Claude Code ..." -ForegroundColor Yellow
 $claude = Get-Command claude -ErrorAction SilentlyContinue
-$needDowngrade = $false
 if ($null -eq $claude) {
     Write-Host "  [X] Claude Code NOT installed!" -ForegroundColor Red
     $checkResults += "Claude Code: not installed"
@@ -57,19 +56,9 @@ if ($null -eq $claude) {
 } else {
     $claudeVersion = (claude --version 2>&1).Trim()
     Write-Host "  [OK] Claude Code version: $claudeVersion" -ForegroundColor Green
-    $checkResults += "Claude Code: $claudeVersion"
-
-    if ($claudeVersion -match "2\.1\.(\d+)") {
-        $patch = [int]$matches[1]
-        if ($patch -gt 153) {
-            Write-Host "  [WARN] Version too high (>2.1.153), may need downgrade" -ForegroundColor Yellow
-            $needDowngrade = $true
-        } else {
-            Write-Host "  [OK] Version compatible" -ForegroundColor Green
-        }
-    } else {
-        Write-Host "  [WARN] Cannot determine version compatibility" -ForegroundColor Yellow
-    }
+    Write-Host "  [OK] Works with the sanitizing proxy (old and new versions both fine)" -ForegroundColor Green
+    $checkResults += "Claude Code: $claudeVersion (OK)"
+    $claudeOK = $true
 }
 
 # --- Summary ---
@@ -81,14 +70,12 @@ Write-Host ""
 Write-Host "===== Next Steps =====" -ForegroundColor Cyan
 if (-not $nodeOK) { Write-Host "  1. Install Node.js: https://nodejs.org" }
 if (-not $gitOK) { Write-Host "  2. Install Git: https://git-scm.com" }
-if (-not $claudeOK) { Write-Host "  3. Install Claude Code: npm install -g @anthropic-ai/claude-code" }
-if ($needDowngrade) { Write-Host "  4. Downgrade Claude Code: run scripts/02-install-cc.ps1" }
+if (-not $claudeOK) { Write-Host "  3. Install Claude Code: run scripts/02-install-cc.ps1" }
 
 Write-Host ""
 return @{
     nodeOK = $nodeOK
     gitOK = $gitOK
     claudeOK = $claudeOK
-    needDowngrade = $needDowngrade
     claudeVersion = $claudeVersion
 }

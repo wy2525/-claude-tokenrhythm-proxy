@@ -64,14 +64,14 @@ function Save-Profile {
 
 # --- Form ---
 $form = New-Object System.Windows.Forms.Form
-$form.Text = "Claude Code Environment Setup"
+$form.Text = "Claude Code Gateway Setup"
 $form.Size = New-Object System.Drawing.Size(560, 680)
 $form.StartPosition = "CenterScreen"
 $form.FormBorderStyle = "FixedDialog"
 $form.MaximizeBox = $false
 
 $lblTitle = New-Object System.Windows.Forms.Label
-$lblTitle.Text = "Claude Code Multi-Provider Setup"
+$lblTitle.Text = "Claude Code Gateway - Any Provider"
 $lblTitle.Font = New-Object System.Drawing.Font("Arial", 14, [System.Drawing.FontStyle]::Bold)
 $lblTitle.Location = New-Object System.Drawing.Point(20, 15)
 $lblTitle.Size = New-Object System.Drawing.Size(500, 30)

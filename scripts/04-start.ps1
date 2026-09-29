@@ -237,6 +237,7 @@ $sessionSettings = @{
         ANTHROPIC_BETAS = ""
         CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC = "1"
         DISABLE_AUTOUPDATER = "1"
+        CLAUDE_CODE_DISABLE_UNKNOWN_MODEL_WINDOW_ENFORCEMENT = "1"
     }
 }
 $sessionSettings | ConvertTo-Json -Depth 10 | Set-Content -Path $settingsPath -Encoding ASCII

@@ -8,7 +8,7 @@ $scriptsDir = Join-Path $scriptDir "scripts"
 
 Write-Host ""
 Write-Host "==========================================" -ForegroundColor Cyan
-Write-Host "  cc-env-setup | Claude Code Setup Tool" -ForegroundColor Cyan
+Write-Host "  claude-code-gateway | Claude Code Gateway Setup" -ForegroundColor Cyan
 Write-Host "==========================================" -ForegroundColor Cyan
 Write-Host ""
 

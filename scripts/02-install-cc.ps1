@@ -1,49 +1,53 @@
-# ============================================
-# cc-env-setup | 瀹夎/闄嶇骇 Claude Code
-# 瀹夎 2.1.153锛堝吋瀹圭増鏈級
-# ============================================
+# cc-env-setup | Install Claude Code (latest or specific version)
+# Latest works with the sanitizing proxy; 2.1.153 is a fallback option.
 
 param(
-    [string]$Version = "2.1.153"
+    [string]$Version = "latest"
 )
 
 $ErrorActionPreference = "Stop"
 
 Write-Host ""
-Write-Host "===== Claude Code 瀹夎/闄嶇骇 =====" -ForegroundColor Cyan
-Write-Host "鐩爣鐗堟湰: $Version"
+Write-Host "===== Claude Code Install =====" -ForegroundColor Cyan
+Write-Host "Target: $Version" -ForegroundColor Yellow
 Write-Host ""
 
-# 妫€鏌ュ綋鍓嶇増鏈?$current = (claude --version 2>&1).Trim()
-Write-Host "褰撳墠鐗堟湰: $current"
+$current = ""
+$claude = Get-Command claude -ErrorAction SilentlyContinue
+if ($null -ne $claude) { $current = (claude --version 2>&1).Trim() }
+Write-Host "Current version: $current"
 
-if ($current -eq $Version) {
-    Write-Host "[OK] 宸叉槸鏈€浣崇増鏈紝鏃犻渶鎿嶄綔" -ForegroundColor Green
+if ($Version -ne "latest" -and $current -eq $Version) {
+    Write-Host "[OK] Already at target version, nothing to do" -ForegroundColor Green
     exit 0
 }
 
 Write-Host ""
-Write-Host "寮€濮嬪畨瑁?Claude Code $Version ..." -ForegroundColor Yellow
+Write-Host "Installing Claude Code ($Version) ..." -ForegroundColor Yellow
 
-# 灏濊瘯鍏ㄥ眬瀹夎
+$pkg = "@anthropic-ai/claude-code"
+if ($Version -eq "latest") { $pkg = "$pkg@latest" } else { $pkg = "$pkg@$Version" }
+
 try {
-    npm install -g "@anthropic-ai/claude-code@$Version" 2>&1 | Out-Host
+    npm install -g $pkg 2>&1 | Out-Host
 } catch {
-    Write-Host "[X] 瀹夎澶辫触锛屽彲鑳介渶瑕佺鐞嗗憳鏉冮檺" -ForegroundColor Red
-    Write-Host "璇蜂互绠＄悊鍛樿韩浠芥墦寮€ PowerShell 鍚庨噸璇? -ForegroundColor Yellow
+    Write-Host "[X] Install failed. Try running PowerShell as Administrator." -ForegroundColor Red
     exit 1
 }
 
-# 楠岃瘉
 Write-Host ""
 $newVersion = (claude --version 2>&1).Trim()
-Write-Host "瀹夎鍚庣増鏈? $newVersion"
+Write-Host "Installed version: $newVersion"
 
-if ($newVersion -eq $Version) {
-    Write-Host "[OK] Claude Code $Version 瀹夎鎴愬姛锛? -ForegroundColor Green
+if ($Version -eq "latest" -or $newVersion -eq $Version) {
+    Write-Host "[OK] Install succeeded!" -ForegroundColor Green
+    Write-Host ""
+    Write-Host "Note: BOTH latest and older versions work with this tool." -ForegroundColor Cyan
+    Write-Host "      - Latest (2.1.283+): sanitizing proxy handles it automatically." -ForegroundColor Cyan
+    Write-Host "      - Fallback old version: run this script with -Version 2.1.153" -ForegroundColor Cyan
 } else {
-    Write-Host "[WARN] 鐗堟湰鍙兘鏈敓鏁堬紝璇烽噸鏂版墦寮€缁堢楠岃瘉" -ForegroundColor Yellow
+    Write-Host "[WARN] Version may not have taken effect, reopen terminal to verify" -ForegroundColor Yellow
 }
 
 Write-Host ""
-Write-Host "=== 瀹屾垚 ===" -ForegroundColor Cyan
+Write-Host "===== Done =====" -ForegroundColor Cyan
