@@ -1,6 +1,8 @@
 param(
     [string]$Model = "",
-    [string]$WorkDir = ""
+    [string]$WorkDir = "",
+    [string]$BaseUrl = "",
+    [string]$ApiKey = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -8,15 +10,30 @@ $ErrorActionPreference = "Stop"
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $configPath = Join-Path $scriptDir "..\.local-config.json"
 
-# Load local config
+# Load local config (supports multi-provider profiles and legacy single config)
 $apiKey = ""
 if (Test-Path $configPath) {
     try {
         $cfg = Get-Content $configPath -Raw | ConvertFrom-Json
-        $apiKey = $cfg.apiKey
-        if (-not $Model -and $cfg.model) { $Model = $cfg.model }
+        if ($cfg.profiles) {
+            # New multi-profile format
+            $active = if ($cfg.active) { $cfg.active } else { "tokenrhythm" }
+            $p = $null
+            if ($cfg.profiles.PSObject.Properties.Name -contains $active) { $p = $cfg.profiles.$active }
+            if ($p) {
+                if (-not $ApiKey -and $p.apiKey) { $apiKey = $p.apiKey }
+                if (-not $BaseUrl -and $p.baseUrl) { $BaseUrl = $p.baseUrl }
+                if (-not $Model -and $p.model) { $Model = $p.model }
+            }
+        } else {
+            # Legacy single format
+            if (-not $ApiKey) { $apiKey = $cfg.apiKey }
+            if (-not $Model) { $Model = $cfg.model }
+        }
     } catch {}
 }
+
+if ($ApiKey) { $apiKey = $ApiKey }
 
 if ([string]::IsNullOrWhiteSpace($apiKey)) {
     Write-Host "[X] API Key not found. Run scripts/03-config.ps1 first." -ForegroundColor Red
@@ -25,10 +42,25 @@ if ([string]::IsNullOrWhiteSpace($apiKey)) {
 
 if ([string]::IsNullOrWhiteSpace($Model)) { $Model = "deepseek-flash" }
 if ([string]::IsNullOrWhiteSpace($WorkDir)) { $WorkDir = (Get-Location).Path }
+if ([string]::IsNullOrWhiteSpace($BaseUrl)) { $BaseUrl = "https://tokenrhythm.studio/v1" }
+
+# Split BaseUrl into upstream root and path prefix
+# e.g. https://tokenrhythm.studio/v1 -> root https://tokenrhythm.studio, prefix /v1
+#      https://api.deepseek.com/anthropic -> root https://api.deepseek.com, prefix /anthropic
+try {
+    $uri = [Uri]$BaseUrl
+    $upstreamRoot = $uri.Scheme + "://" + $uri.Authority
+    $prefix = $uri.AbsolutePath.TrimEnd("/")
+    if ($prefix -eq "/") { $prefix = "" }
+} catch {
+    Write-Host "[X] Invalid BaseUrl: $BaseUrl" -ForegroundColor Red
+    exit 1
+}
 
 Write-Host ""
 Write-Host "===== Starting Claude Code =====" -ForegroundColor Cyan
 Write-Host "Model:     $Model"
+Write-Host "BaseUrl:   $BaseUrl"
 Write-Host "WorkDir:   $WorkDir"
 Write-Host ""
 
@@ -189,7 +221,7 @@ Set-Content -Path $proxyPath -Value $proxyCode -Encoding ASCII
 
 $sessionSettings = @{
     env = @{
-        ANTHROPIC_BASE_URL = "http://127.0.0.1:$Port"
+        ANTHROPIC_BASE_URL = "http://127.0.0.1:$Port$prefix"
         ANTHROPIC_AUTH_TOKEN = $apiKey
         ANTHROPIC_API_KEY = ""
         ANTHROPIC_MODEL = $Model
@@ -204,6 +236,7 @@ $sessionSettings = @{
         ENABLE_TOOL_SEARCH = "false"
         ANTHROPIC_BETAS = ""
         CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC = "1"
+        DISABLE_AUTOUPDATER = "1"
     }
 }
 $sessionSettings | ConvertTo-Json -Depth 10 | Set-Content -Path $settingsPath -Encoding ASCII
@@ -211,7 +244,7 @@ $sessionSettings | ConvertTo-Json -Depth 10 | Set-Content -Path $settingsPath -E
 $proxyProcess = $null
 try {
     $quotedProxy = '"' + $proxyPath + '"'
-    $proxyProcess = Start-Process -FilePath $node.Source -ArgumentList @($quotedProxy, "$Port", "$PID", "https://tokenrhythm.studio") -WindowStyle Hidden -PassThru
+    $proxyProcess = Start-Process -FilePath $node.Source -ArgumentList @($quotedProxy, "$Port", "$PID", $upstreamRoot) -WindowStyle Hidden -PassThru
 
     $ready = $false
     for ($i = 0; $i -lt 40; $i++) {
@@ -223,7 +256,7 @@ try {
     if (-not $ready) { throw "Proxy failed to start" }
 
     Write-Host "[OK] Local proxy: http://127.0.0.1:$Port" -ForegroundColor Green
-    Write-Host "[OK] Upstream:    https://tokenrhythm.studio" -ForegroundColor Green
+    Write-Host "[OK] Upstream:    $upstreamRoot" -ForegroundColor Green
     Write-Host "[OK] Model:       $Model" -ForegroundColor Green
     Write-Host ""
     Write-Host "Starting Claude Code (cleans up on exit)..." -ForegroundColor Yellow

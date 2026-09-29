@@ -156,7 +156,39 @@ powershell -ExecutionPolicy Bypass -File scripts\04-start.ps1 -Model "deepseek-f
 | `deepseek-v4-pro-0813` | DeepSeek 专业模型 |
 | `mimo-v2.6-pro` | Mimo 专业模型 |
 
-> 可在 `scripts/03-config.ps1` 或 `04-start.ps1` 中按需添加其他模型。
+> 模型名可自由输入（UI 中 Model 下拉框可直接键入）。
+
+---
+
+## 🔌 多提供商支持（TokenRhythm / DeepSeek 官方 / 自定义网关）
+
+UI 支持配置多个提供商，每个提供商独立保存自己的 Key 和模型，随时切换：
+
+| 提供商 | BaseURL 预设 | 常用模型 |
+| --- | --- | --- |
+| **TokenRhythm**（基元律动） | `https://tokenrhythm.studio/v1` | `deepseek-flash`、`glm-5.3-flashx` 等 |
+| **DeepSeek 官方** | `https://api.deepseek.com/anthropic` | `deepseek-chat`、`deepseek-reasoner` |
+| **Custom**（自定义） | 任意 Anthropic 兼容网关地址 | 任意模型名 |
+
+**使用方法：**
+1. 在 UI 的 **Provider** 下拉框选择提供商（BaseURL 自动填充预设）
+2. 填入该提供商的 API Key 和模型名
+3. 点 **Save Config**（每个提供商的配置独立保存）
+4. 切换提供商时，其配置自动加载，直接 Start 即可
+
+**配置文件格式**（`.local-config.json`，多档案）：
+
+```json
+{
+  "active": "tokenrhythm",
+  "profiles": {
+    "tokenrhythm": { "baseUrl": "https://tokenrhythm.studio/v1", "apiKey": "sk_tr_xxx", "model": "deepseek-flash" },
+    "deepseek":    { "baseUrl": "https://api.deepseek.com/anthropic", "apiKey": "sk-xxx", "model": "deepseek-chat" }
+  }
+}
+```
+
+> 本地清洗代理会自动处理 BaseURL 的路径前缀（如 `/v1`、`/anthropic`），无需关心转发细节。
 
 ---
 
